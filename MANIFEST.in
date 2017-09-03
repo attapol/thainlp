@@ -1,0 +1,3 @@
+include thainlp/tokenization/crf.tar.gz
+include thainlp/tokenization/crf.model
+include thainlp/tokenization/crf_template.txt
