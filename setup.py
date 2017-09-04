@@ -9,5 +9,6 @@ setup(name='thainlp',
       packages=['thainlp', 'thainlp.tokenization'],
       install_requires=['sklearn_crfsuite'],
       package_data={'thainlp.tokenization': 'crf*'},
-      install_package_data=True
+      install_package_data=True,
+      test_suite='thainlp.tests'
       )
