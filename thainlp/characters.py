@@ -28,7 +28,8 @@ def terminalize(char_set):
 #THAI_CHAR_SET = set(thai_char_list)
 
 MAIN_GRAMMAR_STR = u"""
-S -> A SILENT | A SILENT S 
+S -> SYLLABLE | SYLLABLE S
+SYLLABLE -> A SILENT
 C -> {}
 HC -> {}
 MC -> {}
@@ -89,7 +90,7 @@ A -> IC 'ำ' | 'ไ' IC | 'ไ' IC C |'ใ' IC | C 'ฤ' C | 'เ' IC 'า' | '
 """
 GRAMMAR_STR = MAIN_GRAMMAR_STR + SPV_RULES + SSV_RULES + DIPHTHONG_RULES + EXTRA_RULES + CONSONANT_CLUSTER
 
-ATOMIC_ROOT_SYMBOL_SET = set([u'A'])
+ATOMIC_ROOT_SYMBOL_SET = set([u'SYLLABLE'])
 
 GRAMMAR = nltk.CFG.fromstring(GRAMMAR_STR)
 PARSER = nltk.ChartParser(GRAMMAR)
@@ -138,7 +139,8 @@ if __name__ == '__main__':
             u'เสียงย่อมยอยศใคร', u'ทั่วหล้า',
             u'สองเผือพี่หลับใหล', u'ลืมตื่นฤาพี่',
             u'สองพี่คิดเองอ้า', u'อย่าได้ถามเผือ',
-            u'ฉันตายโดยปราศจากคนที่รักฉัน',u'แต่ฉัน',u'ก็อิ่มใจว่า', u'ฉันมีคนที่ฉันรัก',
+            u'ฉันตายโดยปราศจากคนที่รักฉัน',u'แต่ฉันก็อิ่มใจว่าฉันมีคนที่ฉันรัก',
+            u'เดือนช่วงดวงเด่นฟ้าดาดาว',u'หม่อมราชวงศ์กีรติ',
             ]
     for test_case in test_cases:
         print '|'.join(parse_syllables(test_case))
