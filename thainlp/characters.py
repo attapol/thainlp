@@ -3,10 +3,20 @@ import nltk
 
 CONSONANTS = [unichr(ord(u'ก') + i) for i in range(46)]
 SINGLE_PREFIX_VOWEL = [u'เ', u'แ', u'โ']
-SINGLE_SUFFIX_VOWEL = [u'ะ', u'า']
-SINGLE_TOP_VOWEL = [u' ิ', u' ี', u' ึ', u' ื' ]
+SINGLE_SUFFIX_VOWEL_OPT_FINAL = [u'า', u'อ']
+SINGLE_TOP_VOWEL = [u' ิ', u' ี', u' ึ' ]
 SINGLE_TOP_VOWEL_WITH_FINAL = [u' ื', u' ั']
 TONE_MARKERS = [u' ่', u' ้', u' ๊', u' ๋']
+
+HIGH_CONSONANTS = [x for x in u'ขฃฉผฝถฐสศษห']
+MID_CONSONANTS = [x for x in u'กจฎฏดตบปอ']
+LOW_SINGLE_CONSONANTS  = [x for x in u'งญณนมยรลวฬ']
+
+STOP_CONSONANTS = [x for x in u'บปพฟภจชซฌฎฏฐฑฒดตถทธศษสกขคฆ']
+NON_APPROXIMANT_FINALS = [x for x in u'มญณนรลฬงบปพฟภจชซฌฎฏฐฑฒดตถทธศษสกขคฆ']
+APPROXIMANT_FINALS = [u'ว', u'ย']
+CONSONANTS_FINALS = APPROXIMANT_FINALS + NON_APPROXIMANT_FINALS
+
 
 def terminalize(char_set):
     stripped_char_set = [x.strip() for x in char_set]
@@ -18,40 +28,66 @@ def terminalize(char_set):
 #THAI_CHAR_SET = set(thai_char_list)
 
 MAIN_GRAMMAR_STR = u"""
-S -> A S 
-S -> A
-A -> C V
+S -> A SILENT | A SILENT S 
 C -> {}
-V -> 'า'
-T -> {} 
-CT -> C T | C
-TC -> T C | C
-""".format(terminalize(CONSONANTS), terminalize(TONE_MARKERS))
+HC -> {}
+MC -> {}
+LC -> {}
+T -> {} | 
+""".format(
+        terminalize(CONSONANTS), 
+        terminalize(HIGH_CONSONANTS), 
+        terminalize(MID_CONSONANTS), 
+        terminalize(LOW_SINGLE_CONSONANTS), 
+        terminalize(TONE_MARKERS)
+        )
+
+CONSONANT_CLUSTER = u"""
+CC -> C_LIQUID | C_LEAD
+C_LIQUID -> STOP LIQUID | 'ฟ' LIQUID
+LIQUID -> 'ร' | 'ล' | 'ว'
+C_LEAD -> HC LC | MC LC | 'อ' 'ย'
+
+IC -> CC T | C T
+FC -> FINALS | FINALS 'ร'
+SILENT -> C '์' | C C '์' |
+STOP -> {}
+NON_APPROXIMANT_FINALS -> {}
+FINALS -> {}
+""".format(terminalize(STOP_CONSONANTS),
+        terminalize(NON_APPROXIMANT_FINALS),
+        terminalize(CONSONANTS_FINALS))
 
 SPV_RULES = u"""
-A -> SPV CT | SPV CT SPV_FINAL 
+A -> C T NON_APPROXIMANT_FINALS | STOP 'ล' T NON_APPROXIMANT_FINALS
+A -> STOP 'ร' T NON_APPROXIMANT_FINALS | C_LEAD T NON_APPROXIMANT_FINALS  
+A -> SPV IC | SPV IC SPV_FINAL | SPV IC '็' SPV_FINAL | 'ก' '็' 
 SPV -> {}
-SPV_FINAL -> 'ะ' | C
+SPV_FINAL -> 'ะ' | FC
 """.format(terminalize(SINGLE_PREFIX_VOWEL))
 
 SSV_RULES = u"""
-A -> CT SSV | CT SSV C | C STV | C STV T | C STV TC | CT STV_F TC 
-SSV -> {}
+A -> IC SSV_O_F T | IC SSV_O_F T FC | IC STV T | IC STV T FC | IC STV_F T FC | IC 'ื' T 'อ' 
+A -> IC 'ะ' | IC '็' 'อ' FC
+SSV_O_F -> {}
 STV -> {}
 STV_F -> {}
-""".format(terminalize(SINGLE_SUFFIX_VOWEL), 
+""".format(terminalize(SINGLE_SUFFIX_VOWEL_OPT_FINAL), 
         terminalize(SINGLE_TOP_VOWEL),
         terminalize(SINGLE_TOP_VOWEL_WITH_FINAL))
 
 DIPHTHONG_RULES = u"""
-A -> 'เ' C DIPH | C UA
+A -> 'เ' IC DIPH | IC UA
 DIPH -> IA | UEA 
-IA -> 'ี' 'ย' | 'ี' T 'ย' | 'ี' 'ย' SPV_FINAL | 'ี' T 'ย' SPV_FINAL
-UEA -> 'ื' 'อ' | 'ื' T 'อ' |  'ื' 'อ' SPV_FINAL | 'ื' T 'อ' SPV_FINAL
-UA -> 'ั' 'ว' | 'ั' T 'ว' | 'ั' 'ว' 'ะ' | 'ั' T 'ว' 'ะ' | 'ว' C | T 'ว' C
+IA ->  'ี' T 'ย' | 'ี' T 'ย' SPV_FINAL
+UEA -> 'ื' T 'อ' | 'ื' T 'อ' SPV_FINAL
+UA ->  'ั' T 'ว' | 'ั' T 'ว' 'ะ' | 'ว' FC 
 """
 
-GRAMMAR_STR = MAIN_GRAMMAR_STR + SPV_RULES + SSV_RULES + DIPHTHONG_RULES
+EXTRA_RULES = u"""
+A -> IC 'ำ' | 'ไ' IC | 'ไ' IC C |'ใ' IC | C 'ฤ' C | 'เ' IC 'า' | 'ฤ' 'ๅ' | 'ฦ' 'ๅ'
+"""
+GRAMMAR_STR = MAIN_GRAMMAR_STR + SPV_RULES + SSV_RULES + DIPHTHONG_RULES + EXTRA_RULES + CONSONANT_CLUSTER
 
 ATOMIC_ROOT_SYMBOL_SET = set([u'A'])
 
@@ -59,11 +95,20 @@ GRAMMAR = nltk.CFG.fromstring(GRAMMAR_STR)
 PARSER = nltk.ChartParser(GRAMMAR)
 
 
-def parse_syllables(text):
+def parse_syllables(text, draw=False):
     results = PARSER.parse_all(text)
     if len(results) == 0:
         return []
     syllables = []
+    if len(results) > 1:
+        #print 'Ambiguous'
+        for x in results:
+            syll = []
+            extract_syllables_from_tree(x, syll)
+            if draw:
+                print '|'.join(syll)
+                x.draw()
+        
     extract_syllables_from_tree(results[0], syllables)
     return syllables
 
@@ -76,11 +121,25 @@ def extract_syllables_from_tree(root, so_far):
     
 
 if __name__ == '__main__':
+    #parse_syllables(u'ดวง', True)
+    #parse_syllables(u'วัน', True)
     test_cases = [u'วัน',u'นี้', u'กิน', u'ข้าว', u'มา', u'แล้ว',
             u'วันนี้',
             u'กินข้าว',
             u'วันนี้กินข้าว',
-            u'วันนี้กินข้าวมาแล้ว']
+            u'วันนี้กินข้าวมาแล้ว',
+            u'ปะทะ',
+            u'เป็น',
+            u'แน็ต',
+            u'โก๊ะตี๋',
+            u'น็อก',
+            u'มือถือ',
+            u'เสียงลือเสียงเล่าอ้าง', u'อันใดพี่เอย',
+            u'เสียงย่อมยอยศใคร', u'ทั่วหล้า',
+            u'สองเผือพี่หลับใหล', u'ลืมตื่นฤาพี่',
+            u'สองพี่คิดเองอ้า', u'อย่าได้ถามเผือ',
+            u'ฉันตายโดยปราศจากคนที่รักฉัน',u'แต่ฉัน',u'ก็อิ่มใจว่า', u'ฉันมีคนที่ฉันรัก',
+            ]
     for test_case in test_cases:
         print '|'.join(parse_syllables(test_case))
     
