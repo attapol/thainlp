@@ -3,7 +3,7 @@ import nltk
 
 CONSONANTS = [unichr(ord(u'ก') + i) for i in range(46)]
 SINGLE_PREFIX_VOWEL = [u'เ', u'แ', u'โ']
-SINGLE_SUFFIX_VOWEL_OPT_FINAL = [u'า', u'อ']
+SINGLE_SUFFIX_VOWEL_OPT_FINAL = [u'า', u'อ', u' ุ', u' ู']
 SINGLE_TOP_VOWEL = [u' ิ', u' ี', u' ึ' ]
 SINGLE_TOP_VOWEL_WITH_FINAL = [u' ื', u' ั']
 TONE_MARKERS = [u' ่', u' ้', u' ๊', u' ๋']
@@ -51,7 +51,7 @@ C_LEAD -> HC LC | MC LC | 'อ' 'ย'
 
 IC -> CC T | C T
 FC -> FINALS | FINALS 'ร'
-SILENT -> C '์' | C C '์' |
+SILENT -> C '์' | C C '์' | C 'ิ' '์' | C 'ุ' '์' |
 STOP -> {}
 NON_APPROXIMANT_FINALS -> {}
 FINALS -> {}
@@ -70,6 +70,7 @@ SPV_FINAL -> 'ะ' | FC
 SSV_RULES = u"""
 A -> IC SSV_O_F T | IC SSV_O_F T FC | IC STV T | IC STV T FC | IC STV_F T FC | IC 'ื' T 'อ' 
 A -> IC 'ะ' | IC '็' 'อ' FC
+A -> C 'ร' 'ร' NON_APPROXIMANT_FINALS | C 'ร' 'ร'
 SSV_O_F -> {}
 STV -> {}
 STV_F -> {}
@@ -141,7 +142,15 @@ if __name__ == '__main__':
             u'สองพี่คิดเองอ้า', u'อย่าได้ถามเผือ',
             u'ฉันตายโดยปราศจากคนที่รักฉัน',u'แต่ฉันก็อิ่มใจว่าฉันมีคนที่ฉันรัก',
             u'เดือนช่วงดวงเด่นฟ้าดาดาว',u'หม่อมราชวงศ์กีรติ',
-            ]
+            u'สุพรรณหงส์ทรงพู่ห้อย', u'งามชดช้อยลอยหลังสินธุ์', 
+            u'เพียงหงส์ทรงพรมมินทร์', u'ลินลาศเลื่อนเตือนตาชม',
+            u'ยำใหญ่ใส่สารพัด', u'งามจานจัดหลายเหลือตรา',
+			u'รสดีด้วยน้ำปลา', u'ญี่ปุ่นล้ำเย้ายวนใจ',
+            u'ว่าพลางทางชมคณานก', u'โผนผกจับไม้อึงมี่',
+ 			u'เบญจวรรณจับวัลย์ชาลี', u'เหมือนวันพี่ไกลสามสุดามา', 
+			u'นางนวลจับนางนวลนอน', u'เหมือนพี่แนบนวลสมรจินตะหรา', 
+			u'จากพรากจับจากจำนรรจา', u'เหมือนจากนางสการะวาตี',
+			u'ปางนั้นสมเด็จพระบรมโพธิสัตว์', u'ตรัสได้ทรงฟังพระลูกน้อย', u'ทรงกันแสงทูลละห้อยวันนั้น'] 
     for test_case in test_cases:
         print '|'.join(parse_syllables(test_case))
     
