@@ -18,17 +18,12 @@ APPROXIMANT_FINALS = [u'ว', u'ย']
 CONSONANTS_FINALS = APPROXIMANT_FINALS + NON_APPROXIMANT_FINALS
 
 
-def terminalize(char_set):
+def _terminalize(char_set):
     stripped_char_set = [x.strip() for x in char_set]
     return u"'" + u"' | '".join(stripped_char_set) + u"'"
 
-#vowel_set1 = [unichr(ord(u'ฯ') + i) for i in range(12)]
-#vowel_tone_numbers =[unichr(ord(u'฿') + i) for i in range(29)]
-#thai_char_list = consonants + vowel_set1 + vowel_tone_numbers
-#THAI_CHAR_SET = set(thai_char_list)
-
 MAIN_GRAMMAR_STR = u"""
-S -> SYLLABLE | SYLLABLE S
+START -> SYLLABLE | SYLLABLE START
 SYLLABLE -> A SILENT
 C -> {}
 HC -> {}
@@ -36,11 +31,11 @@ MC -> {}
 LC -> {}
 T -> {} | 
 """.format(
-        terminalize(CONSONANTS), 
-        terminalize(HIGH_CONSONANTS), 
-        terminalize(MID_CONSONANTS), 
-        terminalize(LOW_SINGLE_CONSONANTS), 
-        terminalize(TONE_MARKERS)
+        _terminalize(CONSONANTS), 
+        _terminalize(HIGH_CONSONANTS), 
+        _terminalize(MID_CONSONANTS), 
+        _terminalize(LOW_SINGLE_CONSONANTS), 
+        _terminalize(TONE_MARKERS)
         )
 
 CONSONANT_CLUSTER = u"""
@@ -55,17 +50,17 @@ SILENT -> C '์' | C C '์' | C 'ิ' '์' | C 'ุ' '์' |
 STOP -> {}
 NON_APPROXIMANT_FINALS -> {}
 FINALS -> {}
-""".format(terminalize(STOP_CONSONANTS),
-        terminalize(NON_APPROXIMANT_FINALS),
-        terminalize(CONSONANTS_FINALS))
+""".format(_terminalize(STOP_CONSONANTS),
+        _terminalize(NON_APPROXIMANT_FINALS),
+        _terminalize(CONSONANTS_FINALS))
 
 SPV_RULES = u"""
 A -> C T NON_APPROXIMANT_FINALS | STOP 'ล' T NON_APPROXIMANT_FINALS
 A -> STOP 'ร' T NON_APPROXIMANT_FINALS | C_LEAD T NON_APPROXIMANT_FINALS  
-A -> SPV IC | SPV IC SPV_FINAL | SPV IC '็' SPV_FINAL | 'ก' '็' 
+A -> SPV IC SPV_FINAL | SPV IC '็' FC | 'ก' '็' 
 SPV -> {}
-SPV_FINAL -> 'ะ' | FC
-""".format(terminalize(SINGLE_PREFIX_VOWEL))
+SPV_FINAL -> 'ะ' | FC |
+""".format(_terminalize(SINGLE_PREFIX_VOWEL))
 
 SSV_RULES = u"""
 A -> IC SSV_O_F T | IC SSV_O_F T FC | IC STV T | IC STV T FC | IC STV_F T FC | IC 'ื' T 'อ' 
@@ -74,15 +69,14 @@ A -> C 'ร' 'ร' NON_APPROXIMANT_FINALS | C 'ร' 'ร'
 SSV_O_F -> {}
 STV -> {}
 STV_F -> {}
-""".format(terminalize(SINGLE_SUFFIX_VOWEL_OPT_FINAL), 
-        terminalize(SINGLE_TOP_VOWEL),
-        terminalize(SINGLE_TOP_VOWEL_WITH_FINAL))
+""".format(_terminalize(SINGLE_SUFFIX_VOWEL_OPT_FINAL), 
+        _terminalize(SINGLE_TOP_VOWEL),
+        _terminalize(SINGLE_TOP_VOWEL_WITH_FINAL))
 
 DIPHTHONG_RULES = u"""
-A -> 'เ' IC DIPH | IC UA
-DIPH -> IA | UEA 
-IA ->  'ี' T 'ย' | 'ี' T 'ย' SPV_FINAL
-UEA -> 'ื' T 'อ' | 'ื' T 'อ' SPV_FINAL
+A -> 'เ' IC IA | 'เ' IC UEA | IC UA
+IA ->  'ี' T 'ย' SPV_FINAL
+UEA ->  'ื' T 'อ' SPV_FINAL
 UA ->  'ั' T 'ว' | 'ั' T 'ว' 'ะ' | 'ว' FC 
 """
 
@@ -123,8 +117,6 @@ def extract_syllables_from_tree(root, so_far):
     
 
 if __name__ == '__main__':
-    #parse_syllables(u'ดวง', True)
-    #parse_syllables(u'วัน', True)
     test_cases = [u'วัน',u'นี้', u'กิน', u'ข้าว', u'มา', u'แล้ว',
             u'วันนี้',
             u'กินข้าว',
@@ -135,17 +127,33 @@ if __name__ == '__main__':
             u'แน็ต',
             u'โก๊ะตี๋',
             u'น็อก',
+            u'กากา',
+            u'เจ',
+            u'จี้',
+            u'เตะ',
+            u'เต้น',
+            u'เต๊ะ',
+            u'ก้าม',
+            u'กาก',
+            u'เสีย',
+            u'เสือ',
+            u'เสียง',
+            u'เสี่ยง',
+            u'ดวง',
+            u'ด้วง',
+            u'ตัว',
             u'มือถือ',
             u'เสียงลือเสียงเล่าอ้าง', u'อันใดพี่เอย',
             u'เสียงย่อมยอยศใคร', u'ทั่วหล้า',
             u'สองเผือพี่หลับใหล', u'ลืมตื่นฤาพี่',
             u'สองพี่คิดเองอ้า', u'อย่าได้ถามเผือ',
             u'ฉันตายโดยปราศจากคนที่รักฉัน',u'แต่ฉันก็อิ่มใจว่าฉันมีคนที่ฉันรัก',
-            u'เดือนช่วงดวงเด่นฟ้าดาดาว',u'หม่อมราชวงศ์กีรติ',
+            u'หม่อมราชวงศ์กีรติ',
+            u'เดือนช่วงดวงเด่นฟ้าดาดาว', u'จรูญจรัสรัศมีพราว', u'พร่างพร้อย',
             u'สุพรรณหงส์ทรงพู่ห้อย', u'งามชดช้อยลอยหลังสินธุ์', 
             u'เพียงหงส์ทรงพรมมินทร์', u'ลินลาศเลื่อนเตือนตาชม',
             u'ยำใหญ่ใส่สารพัด', u'งามจานจัดหลายเหลือตรา',
-			u'รสดีด้วยน้ำปลา', u'ญี่ปุ่นล้ำเย้ายวนใจ',
+			u'รสดีด้วยน้ำปลา', u'ญี่ปุ่นล้ำย้ำยวนใจ',
             u'ว่าพลางทางชมคณานก', u'โผนผกจับไม้อึงมี่',
  			u'เบญจวรรณจับวัลย์ชาลี', u'เหมือนวันพี่ไกลสามสุดามา', 
 			u'นางนวลจับนางนวลนอน', u'เหมือนพี่แนบนวลสมรจินตะหรา', 
@@ -153,21 +161,3 @@ if __name__ == '__main__':
 			u'ปางนั้นสมเด็จพระบรมโพธิสัตว์', u'ตรัสได้ทรงฟังพระลูกน้อย', u'ทรงกันแสงทูลละห้อยวันนั้น'] 
     for test_case in test_cases:
         print '|'.join(parse_syllables(test_case))
-    
-    print '|'.join(parse_syllables(u'กากา'))
-    print '|'.join(parse_syllables(u'เจ'))
-    print '|'.join(parse_syllables(u'จี้'))
-    print '|'.join(parse_syllables(u'เตะ'))
-    print '|'.join(parse_syllables(u'เต้น'))
-    print '|'.join(parse_syllables(u'เต๊ะ'))
-    print '|'.join(parse_syllables(u'ก้าม'))
-    print '|'.join(parse_syllables(u'กาก'))
-    print '|'.join(parse_syllables(u'เสีย'))
-    print '|'.join(parse_syllables(u'เสือ'))
-    print '|'.join(parse_syllables(u'เสียง'))
-    print '|'.join(parse_syllables(u'เสี่ยง'))
-    print '|'.join(parse_syllables(u'ดวง'))
-    print '|'.join(parse_syllables(u'ด้วง'))
-    print '|'.join(parse_syllables(u'ตัว'))
-
-    #print '|'.join(parse_syllables(u'วันนี้เป็นวันสงกรานต์'))
